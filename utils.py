@@ -52,12 +52,10 @@ def load_lora_model_and_tokenizer(hf_path):
 
     return model, tokenizer
 
-def generate_answer(prompt, model, tokenizer, max_new_tokens=32):
+def generate_answer(system, prompt, model, tokenizer, max_new_tokens=32):
     messages = [
-        {
-            "role": "user",
-            "content": prompt
-        }
+        {"role": "system", "content": system},
+        {"role": "user", "content": prompt}
     ]
 
     text = tokenizer.apply_chat_template(

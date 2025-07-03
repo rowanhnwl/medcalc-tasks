@@ -33,8 +33,10 @@ def main():
     else:
         model, tokenizer = load_model_and_tokenizer(hf_path=model_path)
 
-    train_dataset = MedCalcFineTuneDataset(dataset_path=train_dataset_path, tokenizer=tokenizer)
-    valid_dataset = MedCalcFineTuneDataset(dataset_path=valid_dataset_path, tokenizer=tokenizer)
+    system_prompt = PromptPrefix.TRAINING_PROMPT
+
+    train_dataset = MedCalcFineTuneDataset(dataset_path=train_dataset_path, system_prompt=system_prompt, tokenizer=tokenizer)
+    valid_dataset = MedCalcFineTuneDataset(dataset_path=valid_dataset_path, system_prompt=system_prompt, tokenizer=tokenizer)
 
     training_args = TrainingArguments(
         output_dir=save_dir,

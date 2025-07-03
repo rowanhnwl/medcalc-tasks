@@ -25,7 +25,7 @@ def main():
     n_shots = args.shots
     save_dir = args.save_dir
 
-    prompt_prefix = PromptPrefix.FEW_SHOT
+    system_prompt = PromptPrefix.FEW_SHOT
 
     medcalc_df = pd.read_csv(test_path)
 
@@ -54,9 +54,9 @@ def main():
                     shots.append(shot)
 
             few_shot_obj = MedCalcFewShotPrompt(test_datum=datum, example_data=shots)
-            prompt = prompt_prefix + few_shot_obj.prompt
+            prompt = few_shot_obj.prompt
 
-            answer = generate_answer(prompt, model, tokenizer)
+            answer = generate_answer(system_prompt, prompt, model, tokenizer)
             answer = re.search(r"\{.*?\}", answer, flags=re.DOTALL)
             try:
                 answer = json.loads(answer.group(0))

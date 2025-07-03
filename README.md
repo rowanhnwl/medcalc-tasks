@@ -8,7 +8,7 @@ This repository explores the MedCalc benchmark with the Qwen3-1.7B and Qwen3-4B 
 
 ## Environment
 
-All tasks were run using an A100-40GB GPU with CUDA 11.8.
+All tasks were run using an A100-40GB GPU with CUDA 12.6.
 
 ```
 conda create -n medcalc python

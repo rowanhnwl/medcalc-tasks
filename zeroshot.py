@@ -23,7 +23,7 @@ def main():
 
     medcalc_df = pd.read_csv(test_path)
 
-    prompt_prefix = PromptPrefix.ZERO_SHOT
+    system_prompt = PromptPrefix.ZERO_SHOT
 
     model, tokenizer = load_model_and_tokenizer(model_path)
 
@@ -41,12 +41,12 @@ def main():
 
     for category in categories_dict:
         for datum in tqdm(categories_dict[category], desc=category):
-            prompt = prompt_prefix + datum.create_prompt(infer=True)
+            prompt = datum.create_prompt()
 
             correctness = 0
 
-            answer = generate_answer(prompt, model, tokenizer)
-            print(answer)
+            answer = generate_answer(system_prompt, prompt, model, tokenizer)
+
             answer = re.search(r"\{.*?\}", answer, flags=re.DOTALL)
             try:
                 answer = json.loads(answer.group(0))

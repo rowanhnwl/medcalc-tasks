@@ -9,12 +9,13 @@ from torch.utils.data import Dataset
 from transformers import AutoTokenizer
 
 class PromptPrefix:
-    ZERO_SHOT = "You are a helpful medical tool being used for clinical calculation tasks. Analyze the following to make the specified calculation.\n \
-        Please format your response as a JSON structured as \"{\"answer\": \"<ANSWER>\"}\" where <ANSWER> is a single value.\n\n"
+    ZERO_SHOT = 'You are a helpful assistant for calculating a score for a given patient note. Please output answer only without any other text. Your output should only contain a JSON dict formatted as {"answer": "<ANSWER>"}.'
     
     FEW_SHOT = "You are a helpful medical tool being used for clinical calculation tasks. Analyze the following examples to make the specified calculation at the end.\n \
         Please format your response as a JSON structured as \"{\"answer\": \"<ANSWER>\"}\" where <ANSWER> is a single value.\n\n"
     
+    TRAINING_PROMPT = 'You are a helpful assistant for calculating a score for a given patient note. Please output a brief explanation of the calculation process along with the final answer.'
+
 class MedCalcDatum:
 
     LABEL_KEYS = [
@@ -28,6 +29,8 @@ class MedCalcDatum:
         self.information = {k: v for (k, v) in datapoint.items()}
 
         self.id = self.information["Row Number"]
+        self.patient_note = self.information["Patient Note"]
+        self.question = self.information["Question"]
         self.category = self.information["Category"]
         self.calculator_id = self.information["Calculator ID"]
         self.ground_truth_answer = self.information["Ground Truth Answer"]
@@ -41,19 +44,7 @@ class MedCalcDatum:
         self.information["Relevant Entities"] = json.loads(self.information["Relevant Entities"].replace("\'", "\"").replace("True", "true").replace("False", "false"))
 
     def create_prompt(self, infer=False):
-        prompt = f""
-
-        for key, value in self.information.items():
-
-            if key == "Relevant Entities":   
-                for re_key, re_value in value.items():
-                    if isinstance(re_value, list):
-                        prompt += f"{re_key}: {re_value[0]} {re_value[1]}\n\n"
-                    else:
-                        prompt += f"{re_key}: {re_value}\n\n"
-
-            elif (infer and key not in self.LABEL_KEYS) or not infer:
-                prompt += f"{key}: {value}\n\n"
+        prompt = f'Here is the patient note: \n{self.patient_note}\n\nHere is the task:\n{self.question}\n\nnPlease directly output the JSON dict formatted as {{"answer": "<ANSWER>"}}:'
 
         return prompt
     
@@ -85,8 +76,9 @@ class MedCalcFewShotPrompt:
         return prompt
     
 class MedCalcFineTuneDataset(Dataset):
-    def __init__(self, dataset_path, tokenizer: AutoTokenizer, max_length=2700):
+    def __init__(self, dataset_path, system_prompt: str, tokenizer: AutoTokenizer, max_length=3072):
         self.medcalc_df = pd.read_csv(dataset_path)
+        self.system_prompt = system_prompt
         self.tokenizer = tokenizer
         self.max_length = max_length
 
@@ -120,10 +112,8 @@ class MedCalcFineTuneDataset(Dataset):
     
     def tokenize(self, text):
         messages = [
-            {
-                "role": "user",
-                "content": text
-            }
+            {"role": "system", "content": self.system_prompt},
+            {"role": "user", "content": text}
         ]
 
         text = self.tokenizer.apply_chat_template(
