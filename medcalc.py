@@ -49,10 +49,10 @@ class MedCalcDatum:
         return prompt
     
     def create_trainable_prompt(self, infer=False):
-        prompt = self.information["Patient Note"] + "\n\n" + self.information["Question"]
+        prompt = f'Here is the patient note: \n{self.patient_note}\n\nHere is the task:\n{self.question}'
         
         if not infer:
-            prompt += "\n\n" + "Ground Truth Explanation: " + self.ground_truth_explanation
+            prompt += f'\n\nAnswer: \n{self.ground_truth_answer}\n\nExplanation: \n{self.ground_truth_explanation}'
 
         return prompt
     
@@ -76,9 +76,8 @@ class MedCalcFewShotPrompt:
         return prompt
     
 class MedCalcFineTuneDataset(Dataset):
-    def __init__(self, dataset_path, system_prompt: str, tokenizer: AutoTokenizer, max_length=3072):
+    def __init__(self, dataset_path, tokenizer: AutoTokenizer, max_length=2750):
         self.medcalc_df = pd.read_csv(dataset_path)
-        self.system_prompt = system_prompt
         self.tokenizer = tokenizer
         self.max_length = max_length
 
@@ -104,7 +103,7 @@ class MedCalcFineTuneDataset(Dataset):
 
             len_no_exp = len(tokenized_no_exp["input_ids"])
             
-            tokenized_text["begin_loss_index"] = len_no_exp - 1
+            tokenized_text["begin_loss_index"] = len_no_exp - 4
 
             tokenized_data.append(tokenized_text)
 
@@ -112,7 +111,6 @@ class MedCalcFineTuneDataset(Dataset):
     
     def tokenize(self, text):
         messages = [
-            {"role": "system", "content": self.system_prompt},
             {"role": "user", "content": text}
         ]
 
